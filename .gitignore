@@ -1,0 +1,20 @@
+# 运行期产物
+debug.log
+*.bak-*
+
+# 用户本地配置（config.default.json 入仓，config.json 不入）
+config.json
+
+# 用户数据目录（不应入仓，handoff 文件是每机个人状态）
+handoffs/
+projects/
+
+# OS 杂项
+.DS_Store
+Thumbs.db
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*~

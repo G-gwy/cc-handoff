@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  shellcheck:
+    name: ShellCheck (lib + hooks + install)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run shellcheck
+        uses: ludeeus/action-shellcheck@2.0.0
+        with:
+          scandir: "."
+          severity: warning
+          # SKILL.md 里的 bash 示例用注释（```bash）不会被 shellcheck 扫到
+          # .bak-* / debug.log 等运行期产物不入仓，不需排除
+
+  smoke:
+    name: Smoke test (${{ matrix.os }} / bash-${{ matrix.bash }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            bash: system      # bash 5.x
+            sha1: sha1sum
+          - os: macos-latest
+            bash: system      # Apple 自带 bash 3.2.57（最苛刻下限）
+            sha1: shasum
+          - os: macos-latest
+            bash: homebrew    # 额外验证 brew 新 bash
+            sha1: shasum
+          - os: windows-latest
+            bash: git-bash    # MSYS2 bash 4+
+            sha1: sha1sum
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq (macOS)
+        if: runner.os == 'macOS'
+        run: brew install jq
+
+      - name: Install homebrew bash (macOS)
+        if: runner.os == 'macOS' && matrix.bash == 'homebrew'
+        run: brew install bash
+
+      # Windows runner 的 git-bash 默认就有 jq？实际没有，需手动装
+      - name: Install jq (Windows)
+        if: runner.os == 'Windows'
+        run: choco install jq --no-progress -y
+
+      - name: Probe environment
+        run: |
+          echo "--- bash ---"
+          bash --version | head -1
+          echo "--- tools ---"
+          command -v jq      && jq --version      || echo "(no jq)"
+          command -v awk     && awk --version 2>/dev/null | head -1 || echo "awk: present"
+          command -v sha1sum && sha1sum --version | head -1 || echo "(no sha1sum)"
+          command -v shasum  && shasum  --version | head -1 || echo "(no shasum)"
+          command -v openssl && openssl version              || echo "(no openssl)"
+
+      - name: Choose bash binary
+        id: pick
+        run: |
+          if [ "${{ matrix.bash }}" = "homebrew" ]; then
+            echo "BASH_BIN=$(brew --prefix)/bin/bash" >> "$GITHUB_ENV"
+          else
+            echo "BASH_BIN=bash" >> "$GITHUB_ENV"
+          fi
+
+      - name: Run smoke test
+        run: |
+          "$BASH_BIN" --version | head -1
+          "$BASH_BIN" tests/smoke.sh
