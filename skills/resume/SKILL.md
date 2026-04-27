@@ -45,14 +45,16 @@ fi
 提取命令范式：
 
 ```bash
+# 注意：变量名加 ho_ 前缀避开 zsh 只读保留名（status/path/prompt/argv 等）
+# Claude Code 在 macOS 默认 zsh 下执行 Bash 工具会触发 "read-only variable: status"
 i=0
 for f in "${FILES[@]}"; do
     i=$((i+1))
-    id=$(sed -n 's/^id: *//p' "$f" | head -1)
-    status=$(sed -n 's/^status: *//p' "$f" | head -1)
-    updated=$(sed -n 's/^updated: *//p' "$f" | head -1 | cut -c1-16 | tr 'T' ' ')
-    goal=$(awk '/^## 🎯/{flag=1;next} flag && NF>0 && !/^#/{print; exit}' "$f" | cut -c1-60)
-    echo "[$i] $id | $status | $updated | $goal"
+    ho_id=$(sed -n 's/^id: *//p' "$f" | head -1)
+    ho_status=$(sed -n 's/^status: *//p' "$f" | head -1)
+    ho_updated=$(sed -n 's/^updated: *//p' "$f" | head -1 | cut -c1-16 | tr 'T' ' ')
+    ho_goal=$(awk '/^## 🎯/{flag=1;next} flag && NF>0 && !/^#/{print; exit}' "$f" | cut -c1-60)
+    echo "[$i] $ho_id | $ho_status | $ho_updated | $ho_goal"
 done
 ```
 

@@ -43,6 +43,7 @@ cc-handoff 的目标是 **Claude Code 跑在哪，它就能跑在哪**。
 | `echo -n "$x" \| tool` | `printf '%s' "$x" \| tool` | `echo -n` 在某些 `sh` 里不被识别为 flag |
 | `shasum` 硬依赖 | 探测 `sha1sum` → `shasum` → `openssl` | Linux 通常没 `shasum`，只有 `sha1sum` |
 | `#!/bin/bash` | `#!/usr/bin/env bash` | macOS 某些用户装 brew bash 后 `/bin/bash` 仍是 3.2 |
+| 变量名 `status` / `path` / `prompt` / `argv` / `pipestatus` / `signals` | 加前缀如 `ho_status` | zsh 把这些当**只读特殊变量**，赋值会报 `read-only variable`。Claude Code 的 Bash 工具在 macOS 默认走 zsh 时会触发 |
 
 ## shell-isms 提醒
 
